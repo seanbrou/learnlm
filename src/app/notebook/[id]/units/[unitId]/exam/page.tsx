@@ -1,0 +1,169 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { NotebookLayout } from "../../../notebook-layout";
+import {
+  Check, X, ArrowRight, Trophy, Timer, AlertTriangle, Shield,
+} from "lucide-react";
+
+const mockNotebook = { title: "Biology 101", color: "#10b981" };
+const mockUnit = { _id: "u2", title: "Cellular Respiration" };
+
+const examQuestions = [
+  { question: "A cell is treated with cyanide, which inhibits cytochrome c oxidase (Complex IV). Which of the following would be the LEAST affected?", options: ["ATP production", "NADH oxidation", "Oxygen consumption", "Glycolysis rate"], correctIndex: 3, explanation: "Glycolysis occurs in the cytoplasm and doesn't depend on the ETC. While ATP from oxidative phosphorylation would stop, glycolysis could continue (and even increase via the Pasteur effect).", difficulty: "exam", type: "exam", source: "Exam Prep Q7" },
+  { question: "Calculate the theoretical maximum ATP yield from one glucose if the P/O ratio for NADH is 2.5 and for FADH₂ is 1.5. Glycolysis produces 2 NADH, pyruvate oxidation produces 2 NADH, Krebs produces 6 NADH + 2 FADH₂ + 2 ATP, and glycolysis produces 2 ATP.", options: ["30 ATP", "32 ATP", "36 ATP", "38 ATP"], correctIndex: 1, explanation: "NADH: (2+2+6) × 2.5 = 25 ATP; FADH₂: 2 × 1.5 = 3 ATP; Substrate-level: 2+2 = 4 ATP. Total = 25 + 3 + 4 = 32 ATP.", difficulty: "exam", type: "exam", source: "Exam Prep Q12" },
+  { question: "Which observation best supports the chemiosmotic theory of ATP synthesis?", options: ["ATP production stops when oxygen is removed", "ATP is produced when a pH gradient is artificially created across the inner membrane", "Glycolysis produces ATP without mitochondria", "The Krebs cycle produces GTP"], correctIndex: 1, explanation: "Jagendorf's experiment showed that creating an artificial proton gradient across the thylakoid membrane drove ATP synthesis even without electron transport — directly supporting the chemiosmotic hypothesis.", difficulty: "exam", type: "exam", source: "Exam Prep Q19" },
+  { question: "In a eukaryotic cell, where would you find the highest concentration of H+ ions during active respiration?", options: ["Mitochondrial matrix", "Cytoplasm", "Intermembrane space", "Nucleus"], correctIndex: 2, explanation: "The ETC pumps protons from the matrix into the intermembrane space, creating the proton gradient. The intermembrane space becomes more acidic (higher [H+]) than the matrix.", difficulty: "exam", type: "exam", source: "Exam Prep Q3" },
+];
+
+export default function ExamPage() {
+  const params = useParams();
+  const notebookId = params.id as string;
+  const unitId = params.unitId as string;
+  const notebook = mockNotebook;
+
+  const [currentQ, setCurrentQ] = useState(0);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [answers, setAnswers] = useState<{ selected: number; correct: boolean }[]>([]);
+  const [complete, setComplete] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(600); // 10 minutes
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    if (!started || complete) return;
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) { setComplete(true); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [started, complete]);
+
+  const min = Math.floor(timeRemaining / 60);
+  const sec = timeRemaining % 60;
+
+  if (!started) {
+    return (
+      <NotebookLayout notebookId={notebookId} notebookTitle={notebook.title} notebookColor={notebook.color}>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="bg-white rounded-xl border border-slate-200 p-8 text-center max-w-md">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+              <Shield className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Exam Mode</h2>
+            <p className="text-slate-600 mb-4">{examQuestions.length} exam-level questions · 10 minute time limit</p>
+            <div className="space-y-2 text-sm text-slate-500 mb-6 text-left">
+              <p className="flex items-center gap-2"><Timer className="w-4 h-4" />Timer runs — you can't pause</p>
+              <p className="flex items-center gap-2"><AlertTriangle className="w-4 h-4" />No explanations until the end</p>
+              <p className="flex items-center gap-2"><Shield className="w-4 h-4" />Harder than regular quiz questions</p>
+            </div>
+            <button onClick={() => setStarted(true)} className="w-full bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors">
+              Start Exam
+            </button>
+          </div>
+        </div>
+      </NotebookLayout>
+    );
+  }
+
+  if (complete) {
+    const correct = answers.filter((a) => a.correct).length;
+    const accuracy = Math.round((correct / examQuestions.length) * 100);
+    return (
+      <NotebookLayout notebookId={notebookId} notebookTitle={notebook.title} notebookColor={notebook.color}>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="bg-white rounded-xl border border-slate-200 p-8 text-center max-w-lg w-full">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center">
+              <Trophy className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-1">Exam Results</h2>
+            <p className="text-3xl font-bold text-indigo-600 mb-2">{accuracy}%</p>
+            <p className="text-slate-600 mb-1">{correct}/{examQuestions.length} correct</p>
+            <p className="text-sm text-slate-400 mb-6">Time remaining: {min}:{sec.toString().padStart(2, "0")}</p>
+            <div className="space-y-2 mb-6 text-left">
+              {examQuestions.map((qq, i) => (
+                <div key={i} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${answers[i]?.correct ? "bg-emerald-100 text-emerald-600" : "bg-red-100 text-red-600"}`}>
+                    {answers[i]?.correct ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                  </div>
+                  <p className="text-sm text-slate-700 truncate flex-1">{qq.question}</p>
+                </div>
+              ))}
+            </div>
+            <Link href={`/notebook/${notebookId}/units/${unitId}`} className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors mx-auto justify-center">
+              Back to Unit
+            </Link>
+          </div>
+        </div>
+      </NotebookLayout>
+    );
+  }
+
+  const q = examQuestions[currentQ];
+  return (
+    <NotebookLayout notebookId={notebookId} notebookTitle={notebook.title} notebookColor={notebook.color}>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Shield className="w-5 h-5 text-red-600" />
+          <span className="font-semibold text-slate-900">Exam Mode</span>
+        </div>
+        <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold ${
+          timeRemaining < 60 ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-700"
+        }`}>
+          <Timer className="w-4 h-4" />
+          {min}:{sec.toString().padStart(2, "0")}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <span className="text-xs font-medium text-red-600 uppercase tracking-wider">Question {currentQ + 1} of {examQuestions.length}</span>
+        <h2 className="text-xl font-semibold text-slate-900 mt-3 mb-6">{q.question}</h2>
+
+        <div className="space-y-3">
+          {q.options.map((opt, idx) => {
+            const isSel = selected === idx;
+            return (
+              <button key={idx} onClick={() => { if (!showExplanation) setSelected(idx); }} className={`w-full flex items-center gap-4 p-4 border-2 rounded-lg text-left transition-all ${isSel ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200" : "border-slate-200 hover:border-indigo-300 hover:bg-indigo-50"}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-medium text-sm ${isSel ? "bg-indigo-500 text-white" : "bg-slate-100 text-slate-600"}`}>
+                  {String.fromCharCode(65 + idx)}
+                </div>
+                <span className="font-medium text-slate-700">{opt}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {selected !== null && !showExplanation && (
+          <div className="mt-6 flex justify-end gap-3">
+            <button onClick={() => setShowExplanation(true)} className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors">
+              Submit Answer
+            </button>
+          </div>
+        )}
+
+        {showExplanation && (
+          <>
+            <div className={`mt-6 p-4 rounded-lg border ${selected === q.correctIndex ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+              <p className="text-sm font-medium">{selected === q.correctIndex ? "Correct!" : `The correct answer was ${String.fromCharCode(65 + q.correctIndex)}`}</p>
+              <p className="text-sm text-slate-700 mt-1">{q.explanation}</p>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button onClick={() => {
+                setAnswers((prev) => [...prev, { selected: selected!, correct: selected === q.correctIndex }]);
+                if (currentQ < examQuestions.length - 1) { setCurrentQ((p) => p + 1); setSelected(null); setShowExplanation(false); }
+                else { setComplete(true); }
+              }} className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                {currentQ < examQuestions.length - 1 ? "Next Question" : "Submit Exam"}
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </NotebookLayout>
+  );
+}

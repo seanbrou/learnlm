@@ -1,0 +1,109 @@
+"use client";
+
+import Link from "next/link";
+import {
+  TrendingUp, Brain, Target, Clock, Award,
+  BarChart3, Trophy, Star, Zap, ChevronRight,
+} from "lucide-react";
+
+const notebooks = [
+  { _id: "bio101", title: "Biology 101", color: "#10b981", icon: "🧬", mastery: 48, unitsCompleted: 1, totalUnits: 4 },
+  { _id: "cs201", title: "Computer Science 201", color: "#6366f1", icon: "💻", mastery: 72, unitsCompleted: 3, totalUnits: 4 },
+  { _id: "chem102", title: "Organic Chemistry", color: "#f59e0b", icon: "⚗️", mastery: 35, unitsCompleted: 1, totalUnits: 5 },
+];
+
+export default function ProgressPage() {
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200 px-8 py-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+            <BarChart3 className="w-5 h-5 text-indigo-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Learning Progress</h1>
+            <p className="text-sm text-slate-500">Track your mastery across all notebooks</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto p-6">
+        {/* Overall Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <StatCard icon={TrendingUp} label="Overall Mastery" value="52%" color="text-emerald-600" bg="bg-emerald-50" />
+          <StatCard icon={Clock} label="This Week" value="4.2h" color="text-blue-600" bg="bg-blue-50" />
+          <StatCard icon={Calendar} label="Study Streak" value="7 days" color="text-amber-600" bg="bg-amber-50" />
+          <StatCard icon={Award} label="Units Mastered" value="5/13" color="text-violet-600" bg="bg-violet-50" />
+        </div>
+
+        {/* Notebook Progress */}
+        <h2 className="text-lg font-bold text-slate-900 mb-4">Notebook Progress</h2>
+        <div className="space-y-4 mb-8">
+          {notebooks.map((nb) => (
+            <Link key={nb._id} href={`/notebook/${nb._id}/progress`} className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md hover:border-indigo-200 transition-all block">
+              <div className="flex items-center gap-4">
+                <span className="text-2xl">{nb.icon}</span>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-semibold text-slate-900">{nb.title}</h3>
+                    <span className={`text-lg font-bold ${nb.mastery >= 60 ? "text-emerald-600" : nb.mastery >= 40 ? "text-amber-600" : "text-slate-400"}`}>
+                      {nb.mastery}%
+                    </span>
+                  </div>
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${nb.mastery}%`, backgroundColor: nb.color }} />
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">{nb.unitsCompleted}/{nb.totalUnits} units completed</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-300" />
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Achievements */}
+        <h2 className="text-lg font-bold text-slate-900 mb-4">Achievements</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { icon: Star, label: "First Unit Mastered", earned: true },
+            { icon: Zap, label: "7-Day Streak", earned: true },
+            { icon: Trophy, label: "Quiz Champion", earned: true },
+            { icon: Brain, label: "Deep Thinker", earned: false },
+          ].map((ach) => (
+            <div key={ach.label} className={`rounded-xl border p-4 text-center ${ach.earned ? "bg-amber-50 border-amber-200" : "bg-slate-50 border-slate-200 opacity-50"}`}>
+              <div className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-2 ${ach.earned ? "bg-amber-100" : "bg-slate-200"}`}>
+                <ach.icon className={`w-5 h-5 ${ach.earned ? "text-amber-600" : "text-slate-400"}`} />
+              </div>
+              <p className="text-xs font-medium text-slate-700">{ach.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, color, bg }: any) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-slate-500">{label}</p>
+          <p className={`text-2xl font-bold mt-1 ${color}`}>{value}</p>
+        </div>
+        <div className={`w-10 h-10 rounded-lg ${bg} flex items-center justify-center`}>
+          <Icon className={`w-5 h-5 ${color}`} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Calendar(props: any) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" />
+    </svg>
+  );
+}

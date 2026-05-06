@@ -1,65 +1,129 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+// Convex integration ready — useQuery commented out for mock mode
+// import { useQuery } from "convex/react";
+// import { api } from "@convex/_generated/api";
+import Link from "next/link";
+import {
+  BookOpen, Plus, Brain, Target, Repeat, Timer,
+  BarChart3, TrendingUp, FileText, ChevronRight,
+  Sparkles, GraduationCap, ClipboardList, Clock,
+} from "lucide-react";
+
+const mockNotebooks = [
+  { _id: "nb1", title: "Biology 101", description: "Cell biology, genetics, and evolution", subject: "Biology", color: "#10b981", icon: "🧬", createdAt: Date.now() - 86400000 * 7 },
+  { _id: "nb2", title: "MCAT Prep", description: "Comprehensive MCAT study materials", subject: "Medicine", color: "#6366f1", icon: "🩺", createdAt: Date.now() - 86400000 * 14 },
+  { _id: "nb3", title: "Machine Learning", description: "CS229 lecture notes and papers", subject: "Computer Science", color: "#f59e0b", icon: "🤖", createdAt: Date.now() - 86400000 * 3 },
+  { _id: "nb4", title: "Organic Chemistry", description: "Reactions, mechanisms, and synthesis", subject: "Chemistry", color: "#ef4444", icon: "⚗️", createdAt: Date.now() - 86400000 * 21 },
+];
+
+export default function DashboardPage() {
+  const notebooks = mockNotebooks;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Welcome back, Sean</h1>
+          <p className="text-slate-500 mt-1">Your AI-powered learning platform</p>
+        </div>
+        <Link
+          href="/notebook/new"
+          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          New Notebook
+        </Link>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <QuickStat icon={BookOpen} label="Notebooks" value={notebooks.length} color="indigo" />
+        <QuickStat icon={Target} label="Due for Review" value={12} color="amber" />
+        <QuickStat icon={TrendingUp} label="Avg Mastery" value="73%" color="emerald" />
+        <QuickStat icon={Clock} label="Study Streak" value="5 days" color="violet" />
+      </div>
+
+      {/* Notebooks Grid */}
+      <h2 className="text-xl font-bold text-slate-900 mb-4">Your Notebooks</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {notebooks.map((nb) => (
+          <Link
+            key={nb._id}
+            href={`/notebook/${nb._id}`}
+            className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-indigo-200 transition-all group"
+          >
+            <div className="h-2" style={{ backgroundColor: nb.color }} />
+            <div className="p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{nb.icon}</span>
+                  <div>
+                    <h3 className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">
+                      {nb.title}
+                    </h3>
+                    <p className="text-xs text-slate-500">{nb.subject}</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-500 transition-colors" />
+              </div>
+              <p className="text-sm text-slate-600 mb-4">{nb.description}</p>
+
+              <div className="flex items-center gap-4 text-xs text-slate-500">
+                <span className="flex items-center gap-1">
+                  <FileText className="w-3.5 h-3.5" />
+                  4 materials
+                </span>
+                <span className="flex items-center gap-1">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  8 units
+                </span>
+                <span className="flex items-center gap-1">
+                  <Target className="w-3.5 h-3.5" />
+                  68% mastery
+                </span>
+              </div>
+            </div>
+          </Link>
+        ))}
+
+        {/* New Notebook Card */}
+        <Link
+          href="/notebook/new"
+          className="bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-8 hover:border-indigo-400 hover:bg-indigo-50 transition-all cursor-pointer group"
+        >
+          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-3 shadow-sm group-hover:shadow-md transition-shadow">
+            <Plus className="w-6 h-6 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+          </div>
+          <p className="font-medium text-slate-600 group-hover:text-indigo-700 transition-colors">
+            Create Notebook
           </p>
+          <p className="text-xs text-slate-400 mt-1">Biology, MCAT, CS, and more</p>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function QuickStat({ icon: Icon, label, value, color }: { icon: any; label: string; value: string | number; color: string }) {
+  const colors: Record<string, string> = {
+    indigo: "bg-indigo-50 text-indigo-600",
+    amber: "bg-amber-50 text-amber-600",
+    emerald: "bg-emerald-50 text-emerald-600",
+    violet: "bg-violet-50 text-violet-600",
+  };
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-slate-500">{label}</p>
+          <p className="text-2xl font-bold text-slate-900 mt-1">{value}</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className={`w-10 h-10 rounded-lg ${colors[color]} flex items-center justify-center`}>
+          <Icon className="w-5 h-5" />
         </div>
-      </main>
+      </div>
     </div>
   );
 }
