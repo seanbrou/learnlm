@@ -44,7 +44,7 @@ export default function NotebookPage() {
           <p className="text-sm text-slate-500 mt-0.5">{units.length} modules · {units.filter((u) => u.status === "mastered").length} complete</p>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-0 overflow-x-auto pb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           {units.map((unit, idx) => {
             const isCompleted = unit.status === "mastered";
             const isActive = unit.status === "practicing";
@@ -56,48 +56,44 @@ export default function NotebookPage() {
             });
 
             return (
-              <div key={unit._id} className="shrink-0 w-full lg:flex-1">
-                {/* Connector */}
+              <div key={unit._id} className="relative group">
+                {/* Connector arrow — shows on xl grid, pointing right from card 2-4 */}
                 {idx > 0 && (
-                  <div className="hidden lg:flex items-center justify-center w-8 h-full">
-                    <div className="border-t-2 border-dashed w-full mx-2" style={{ borderColor: isCompleted && units[idx - 1]?.status === "mastered" ? "#10b981" : "#e2e8f0" }} />
-                    <ArrowRight className="w-4 h-4 shrink-0" style={{ color: isCompleted && units[idx - 1]?.status === "mastered" ? "#10b981" : "#cbd5e1" }} />
-                  </div>
-                )}
-                {idx > 0 && (
-                  <div className="lg:hidden flex items-center justify-center h-4 -my-1">
-                    <ArrowRight className="w-4 h-4 rotate-90" style={{ color: isCompleted ? "#10b981" : "#cbd5e1" }} />
+                  <div className="hidden xl:flex absolute -left-[14px] top-1/2 -translate-y-1/2 z-10 items-center justify-center w-5">
+                    <ArrowRight className="w-4 h-4" style={{ color: isCompleted ? "#10b981" : "#cbd5e1" }} />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 w-5 border-t-2 border-dashed" style={{ borderColor: isCompleted ? "#10b981" : "#e2e8f0" }} />
                   </div>
                 )}
 
                 {/* Module Card */}
-                <div
-                  className={`rounded-xl border p-4 transition-all h-full flex flex-col ${
+                <Link
+                  href={isLocked ? "#" : `/notebook/${notebookId}/units/${unit._id}`}
+                  className={`block rounded-xl border p-4 transition-all h-full flex flex-col ${
                     isCompleted
-                      ? "bg-white border-emerald-200 hover:shadow-md"
+                      ? "bg-white border-emerald-200 hover:shadow-md hover:border-emerald-300"
                       : isActive
-                        ? "bg-white border-amber-300 shadow-md shadow-amber-100/50 ring-1 ring-amber-100"
+                        ? "bg-white border-amber-300 shadow-sm shadow-amber-100/50 ring-1 ring-amber-100 hover:shadow-md"
                         : isStarted
-                          ? "bg-white border-indigo-200 hover:shadow-md"
+                          ? "bg-white border-indigo-200 hover:shadow-md hover:border-indigo-300"
                           : isLocked
                             ? "bg-slate-50/50 border-slate-200 border-dashed"
-                            : "bg-white border-slate-200 hover:shadow-sm"
+                            : "bg-white border-slate-200 hover:shadow-sm hover:border-slate-300"
                   }`}
                 >
                   {/* Header: Step + Title + Percentage */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                  <div className="flex items-start justify-between mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                         isCompleted ? "bg-emerald-500 text-white" :
                         isActive ? "bg-amber-500 text-white" :
                         isStarted ? "bg-indigo-500 text-white" :
                         "bg-slate-200 text-slate-500"
                       }`}>
-                        {isCompleted ? <Check className="w-4 h-4" /> : isLocked ? <Lock className="w-3.5 h-3.5" /> : unit.order}
+                        {isCompleted ? <Check className="w-3.5 h-3.5" /> : isLocked ? <Lock className="w-3 h-3" /> : unit.order}
                       </div>
-                      <h3 className={`text-sm font-bold ${isLocked ? "text-slate-400" : "text-slate-900"}`}>{unit.title}</h3>
+                      <h3 className={`text-sm font-semibold leading-tight ${isLocked ? "text-slate-400" : "text-slate-900"}`}>{unit.title}</h3>
                     </div>
-                    <span className={`text-lg font-black ${
+                    <span className={`text-base font-bold ${
                       isCompleted ? "text-emerald-600" :
                       isActive ? "text-amber-600" :
                       isStarted ? "text-indigo-600" :
@@ -106,33 +102,33 @@ export default function NotebookPage() {
                   </div>
 
                   {/* Metadata Row */}
-                  <div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
+                  <div className="flex items-center gap-2 text-[11px] text-slate-500 mb-2.5">
                     <span>{unit.subunits.length} subunits</span>
                     <span className="text-slate-300">·</span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-0.5">
                       <Clock className="w-3 h-3" />
                       {unit.estimatedMinutes} min
                     </span>
                   </div>
 
                   {/* Subunit Pills */}
-                  <div className="flex flex-wrap gap-1.5 mb-3">
+                  <div className="flex flex-wrap gap-1 mb-3">
                     {unit.subunits.slice(0, 3).map((sub, si) => (
-                      <span key={si} className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                      <span key={si} className={`text-[10px] px-1.5 py-px rounded-full font-medium ${
                         isCompleted ? "bg-emerald-50 text-emerald-700" :
                         isLocked ? "bg-slate-100 text-slate-400" :
                         "bg-slate-50 text-slate-600"
                       }`}>{sub}</span>
                     ))}
                     {unit.subunits.length > 3 && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 font-medium">+{unit.subunits.length - 3}</span>
+                      <span className="text-[10px] px-1.5 py-px rounded-full bg-slate-100 text-slate-400 font-medium">+{unit.subunits.length - 3}</span>
                     )}
                   </div>
 
                   {/* Segmented Progress Bar */}
-                  <div className="flex gap-1 mb-4">
+                  <div className="flex gap-1 mb-3">
                     {unit.subunits.map((_, si) => (
-                      <div key={si} className={`flex-1 h-1.5 rounded-full transition-all ${
+                      <div key={si} className={`flex-1 h-1 rounded-full transition-all ${
                         segmentProgress[si]
                           ? isCompleted ? "bg-emerald-500"
                             : isActive ? "bg-amber-500"
@@ -144,33 +140,27 @@ export default function NotebookPage() {
                   </div>
 
                   {/* Action Footer */}
-                  <div className="mt-auto pt-3 border-t border-slate-100">
+                  <div className="mt-auto pt-2.5 border-t border-slate-100">
                     {isLocked ? (
-                      <div className="flex items-center justify-center gap-1.5 text-slate-400 text-sm font-medium">
-                        <Lock className="w-3.5 h-3.5" />
+                      <div className="flex items-center justify-center gap-1.5 text-slate-400 text-xs font-medium">
+                        <Lock className="w-3 h-3" />
                         Locked
                       </div>
                     ) : isCompleted ? (
-                      <Link
-                        href={`/notebook/${notebookId}/units/${unit._id}`}
-                        className="flex items-center justify-center gap-1.5 text-emerald-600 text-sm font-semibold hover:text-emerald-700 transition-colors"
-                      >
-                        <Check className="w-3.5 h-3.5" />
+                      <div className="flex items-center justify-center gap-1.5 text-emerald-600 text-xs font-semibold">
+                        <Check className="w-3 h-3" />
                         Review
-                      </Link>
+                      </div>
                     ) : (
-                      <Link
-                        href={`/notebook/${notebookId}/units/${unit._id}`}
-                        className={`flex items-center justify-center gap-1.5 text-sm font-semibold transition-colors ${
-                          isActive ? "text-amber-600 hover:text-amber-700" : "text-indigo-600 hover:text-indigo-700"
-                        }`}
-                      >
-                        <PlayCircle className="w-3.5 h-3.5" />
+                      <div className={`flex items-center justify-center gap-1.5 text-xs font-semibold ${
+                        isActive ? "text-amber-600" : "text-indigo-600"
+                      }`}>
+                        <PlayCircle className="w-3 h-3" />
                         Continue
-                      </Link>
+                      </div>
                     )}
                   </div>
-                </div>
+                </Link>
               </div>
             );
           })}
