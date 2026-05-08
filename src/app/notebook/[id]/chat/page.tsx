@@ -1,36 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { NotebookLayout } from "../notebook-layout";
+import { useLearnLM } from "@/lib/learnlm-data";
 import {
-  Send, Brain, BookOpen, Lightbulb, FileText,
-  RotateCcw, Sparkles, ArrowRight, Quote,
+  Send, Brain, FileText,
+  RotateCcw, Sparkles, Quote,
 } from "lucide-react";
 
-const mockNotebook = { title: "Biology 101", color: "#10b981", icon: "🧬" };
-
-interface Message {
-  role: "user" | "assistant" | "system";
-  content: string;
-  citations?: string[];
-  timestamp: number;
-}
-
-const mockResponses: Record<string, { content: string; citations: string[] }> = {
-  default: {
-    content: "Based on your uploaded materials, this topic involves several interconnected concepts. Your lecture notes from Week 3 cover the fundamentals, and the textbook chapter provides deeper context. Would you like me to break this down further or generate some practice questions?",
-    citations: ["Lecture Notes — Week 3, p. 12", "Textbook Ch. 4, pp. 89-91"],
-  },
-  mitochondria: {
-    content: "Mitochondria are the powerhouses of eukaryotic cells. Here's a breakdown from your materials:\n\n**Structure:** Double membrane — the outer membrane is smooth, while the inner membrane is folded into cristae to increase surface area for ATP production.\n\n**Key Processes:**\n1. **Glycolysis** — occurs in the cytoplasm (not the mitochondria), breaks glucose into pyruvate\n2. **Krebs Cycle** — takes place in the mitochondrial matrix\n3. **Electron Transport Chain** — embedded in the inner membrane\n\n**ATP Yield:** ~36-38 ATP per glucose molecule through oxidative phosphorylation.\n\nThink of it like a power plant: glycolism is the raw material prep, the Krebs cycle is the turbine, and the ETC is the generator.",
-    citations: ["Biology Notes — Cellular Respiration, pp. 23-25", "Campbell Biology Ch. 9, pp. 162-175"],
-  },
-  dna: {
-    content: "DNA replication is **semi-conservative** — each new DNA molecule contains one original (parent) strand and one newly synthesized strand.\n\n**Key Steps:**\n1. **Initiation** — Helicase unwinds the double helix at the origin of replication\n2. **Elongation** — DNA polymerase III adds nucleotides 5'→3'\n3. **Leading strand** — synthesized continuously\n4. **Lagging strand** — synthesized discontinuously as Okazaki fragments\n5. **Termination** — Ligase seals the gaps\n\n**Enzymes:** Helicase, Primase, DNA Pol III, DNA Pol I, Ligase\n\nYour Week 5 notes have a great diagram of the replication fork on page 8!",
-    citations: ["Lecture Notes — Week 5, pp. 7-9", "Lab Manual — DNA Replication"],
-  },
-};
 
 const suggestedQuestions = [
   "Explain how mitochondria produce ATP",
@@ -43,15 +21,19 @@ const suggestedQuestions = [
 export default function NotebookChatPage() {
   const params = useParams();
   const notebookId = params.id as string;
-  const notebook = mockNotebook;
-
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: `Hi! I'm your AI tutor for **${notebook.title}**. I've analyzed your uploaded materials and can help you understand concepts, generate practice questions, explain difficult topics, and guide your study sessions.\n\nWhat would you like to work on?`,
+  const { state, getNotebook, getMaterials, getUnits, addChatMessage } = useLearnLM();
+  const notebook = getNotebook(notebookId);
+  const messages = useMemo(() => {
+    const storedMessages = state.chatMessages.filter((m) => m.notebookId === notebookId);
+    if (storedMessages.length) return storedMessages;
+    return [{
+      id: "intro",
+      notebookId,
+      role: "assistant" as const,
+      content: `Hi! I'm your AI tutor for **${notebook?.title || "this notebook"}**. I've analyzed your uploaded materials and can help you understand concepts, generate practice questions, explain difficult topics, and guide your study sessions.\n\nWhat would you like to work on?`,
       timestamp: Date.now(),
-    },
-  ]);
+    }];
+  }, [notebook?.title, notebookId, state.chatMessages]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState<"chat" | "explain" | "quiz" | "summarize">("chat");
@@ -60,36 +42,45 @@ export default function NotebookChatPage() {
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   useEffect(() => scrollToBottom(), [messages]);
 
-  const getAIResponse = (userMessage: string) => {
-    const lower = userMessage.toLowerCase();
-    if (lower.includes("mitochondria") || lower.includes("atp") || lower.includes("respiration")) return mockResponses.mitochondria;
-    if (lower.includes("dna") || lower.includes("replication") || lower.includes("transcription")) return mockResponses.dna;
-    return mockResponses.default;
-  };
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
+  const sendMessage = async () => {
+    if (!input.trim() || !notebook || isTyping) return;
 
-    const userMsg: Message = { role: "user", content: input.trim(), timestamp: Date.now() };
-    setMessages((prev) => [...prev, userMsg]);
+    const userText = input.trim();
+    addChatMessage({ notebookId, role: "user", content: userText });
     setInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const resp = getAIResponse(userMsg.content);
-      const aiMsg: Message = {
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `${mode !== "chat" ? `[${mode}] ` : ""}${userText}`,
+          notebook,
+          materials: getMaterials(notebookId),
+          units: getUnits(notebookId),
+          history: messages,
+        }),
+      });
+      if (!res.ok) throw new Error(`AI request failed with status ${res.status}`);
+      const json = await res.json();
+      addChatMessage({ notebookId, role: "assistant", content: json.content, citations: json.citations });
+    } catch (error) {
+      console.error("AI tutor request failed", error);
+      addChatMessage({
+        notebookId,
         role: "assistant",
-        content: resp.content,
-        citations: resp.citations,
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, aiMsg]);
+        content: "I couldn’t reach the AI tutor for that response, but your message was saved. Try again in a moment, or ask me to summarize a specific unit.",
+        citations: [],
+      });
+    } finally {
       setIsTyping(false);
-    }, 1000 + Math.random() * 1500);
+    }
   };
 
   return (
-    <NotebookLayout notebookId={notebookId} notebookTitle={notebook.title} notebookColor={notebook.color}>
+    <NotebookLayout notebookId={notebookId} notebookTitle={notebook?.title || "Notebook"} notebookColor={notebook?.color || "#6366f1"}>
       <div className="flex flex-col h-[calc(100vh-14rem)]">
         {/* Mode Selector */}
         <div className="flex items-center gap-2 mb-4">

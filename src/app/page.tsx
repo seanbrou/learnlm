@@ -1,24 +1,19 @@
 "use client";
 
-// Convex integration ready — useQuery commented out for mock mode
-// import { useQuery } from "convex/react";
-// import { api } from "@convex/_generated/api";
+import { useLearnLM } from "@/lib/learnlm-data";
 import Link from "next/link";
 import {
-  BookOpen, Plus, Brain, Target, Repeat, Timer,
-  BarChart3, TrendingUp, FileText, ChevronRight,
-  Sparkles, GraduationCap, ClipboardList, Clock,
+  BookOpen, Plus, Target, TrendingUp, FileText, ChevronRight, Clock,
 } from "lucide-react";
 
-const mockNotebooks = [
-  { _id: "nb1", title: "Biology 101", description: "Cell biology, genetics, and evolution", subject: "Biology", color: "#10b981", icon: "🧬", createdAt: Date.now() - 86400000 * 7 },
-  { _id: "nb2", title: "MCAT Prep", description: "Comprehensive MCAT study materials", subject: "Medicine", color: "#6366f1", icon: "🩺", createdAt: Date.now() - 86400000 * 14 },
-  { _id: "nb3", title: "Machine Learning", description: "CS229 lecture notes and papers", subject: "Computer Science", color: "#f59e0b", icon: "🤖", createdAt: Date.now() - 86400000 * 3 },
-  { _id: "nb4", title: "Organic Chemistry", description: "Reactions, mechanisms, and synthesis", subject: "Chemistry", color: "#ef4444", icon: "⚗️", createdAt: Date.now() - 86400000 * 21 },
-];
 
 export default function DashboardPage() {
-  const notebooks = mockNotebooks;
+  const { state, notebookStats, getFlashcards } = useLearnLM();
+  const notebooks = state.notebooks;
+  const stats = notebooks.map((nb) => notebookStats(nb._id));
+  const due = getFlashcards().filter((f) => f.nextReview <= Date.now()).length;
+  const avgMastery = stats.length ? Math.round(stats.reduce((sum, s) => sum + s.mastery, 0) / stats.length) : 0;
+  const streak = Math.max(...notebooks.map((n) => n.studyStreak), 0);
 
   return (
     <div>
@@ -40,15 +35,17 @@ export default function DashboardPage() {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <QuickStat icon={BookOpen} label="Notebooks" value={notebooks.length} color="indigo" />
-        <QuickStat icon={Target} label="Due for Review" value={12} color="amber" />
-        <QuickStat icon={TrendingUp} label="Avg Mastery" value="73%" color="emerald" />
-        <QuickStat icon={Clock} label="Study Streak" value="5 days" color="violet" />
+        <QuickStat icon={Target} label="Due for Review" value={due} color="amber" />
+        <QuickStat icon={TrendingUp} label="Avg Mastery" value={`${avgMastery}%`} color="emerald" />
+        <QuickStat icon={Clock} label="Study Streak" value={`${streak} days`} color="violet" />
       </div>
 
       {/* Notebooks Grid */}
       <h2 className="text-xl font-bold text-slate-900 mb-4">Your Notebooks</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {notebooks.map((nb) => (
+        {notebooks.map((nb) => {
+          const nbStats = notebookStats(nb._id);
+          return (
           <Link
             key={nb._id}
             href={`/notebook/${nb._id}`}
@@ -73,20 +70,21 @@ export default function DashboardPage() {
               <div className="flex items-center gap-4 text-xs text-slate-500">
                 <span className="flex items-center gap-1">
                   <FileText className="w-3.5 h-3.5" />
-                  4 materials
+                  {nbStats.materials} materials
                 </span>
                 <span className="flex items-center gap-1">
                   <BookOpen className="w-3.5 h-3.5" />
-                  8 units
+                  {nbStats.units} units
                 </span>
                 <span className="flex items-center gap-1">
                   <Target className="w-3.5 h-3.5" />
-                  68% mastery
+                  {nbStats.mastery}% mastery
                 </span>
               </div>
             </div>
           </Link>
-        ))}
+          );
+        })}
 
         {/* New Notebook Card */}
         <Link

@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BookOpen, MessageSquare, FileText, BarChart3,
-  ChevronRight, Sparkles, ArrowLeft,
+  BookOpen, MessageSquare, FileText,
+  Sparkles, ArrowLeft,
 } from "lucide-react";
 
 export function NotebookLayout({

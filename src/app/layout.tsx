@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ClientWrapper from "./client-wrapper";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "LearnLM — AI Learning Platform",
   description: "Turn your study materials into personalized AI-powered courses.",

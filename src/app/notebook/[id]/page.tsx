@@ -1,40 +1,40 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import { NotebookLayout } from "./notebook-layout";
+import { useLearnLM } from "@/lib/learnlm-data";
 import {
   FileText, Repeat, Timer, TrendingUp,
   Brain, PlayCircle, Zap, Clock,
   Check, Lock, ArrowRight,
 } from "lucide-react";
 
-const mockNotebook = { title: "Biology 101", color: "#10b981", icon: "🧬" };
-
-const mockUnits = [
-  { _id: "u1", title: "Cell Structure", order: 1, difficulty: "beginner" as const, estimatedMinutes: 45, status: "mastered" as const, mastery: 92, subunits: ["Cell Membrane", "Nucleus", "Organelles", "Cell Types"] },
-  { _id: "u2", title: "Cellular Respiration", order: 2, difficulty: "intermediate" as const, estimatedMinutes: 60, status: "practicing" as const, mastery: 62, subunits: ["Glycolysis", "Krebs Cycle", "ETC", "ATP Synthase"] },
-  { _id: "u3", title: "DNA & Protein Synthesis", order: 3, difficulty: "intermediate" as const, estimatedMinutes: 55, status: "learning" as const, mastery: 38, subunits: ["DNA Structure", "Replication", "Transcription & Translation"] },
-  { _id: "u4", title: "Genetics & Inheritance", order: 4, difficulty: "advanced" as const, estimatedMinutes: 70, status: "not_started" as const, mastery: 0, subunits: ["Mendelian Genetics", "Beyond Mendel", "Population Genetics"] },
-];
 
 export default function NotebookPage() {
   const params = useParams();
   const notebookId = params.id as string;
-  const notebook = mockNotebook;
-  const units = mockUnits;
+  const { getNotebook, getUnits, getSubunits, notebookStats, markStudied } = useLearnLM();
+  const notebook = getNotebook(notebookId);
+  const units = getUnits(notebookId).map((unit) => ({ ...unit, subunits: getSubunits(unit._id).map((s) => s.title) }));
+  const stats = notebookStats(notebookId);
 
-  const currentUnit = units.find((u) => u.status === "practicing" || u.status === "learning");
-  const overallMastery = Math.round(units.reduce((a, b) => a + b.mastery, 0) / units.length);
+  useEffect(() => { markStudied(notebookId, 5); }, [markStudied, notebookId]);
+
+  const currentUnit = units.find((u) => u.status === "practicing" || u.status === "learning") ?? units[0];
+  const overallMastery = stats.mastery;
+
+  if (!notebook) return null;
 
   return (
     <NotebookLayout notebookId={notebookId} notebookTitle={notebook.title} notebookColor={notebook.color}>
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         <StatCard label="Mastery" value={`${overallMastery}%`} icon={TrendingUp} color="text-emerald-600" bg="bg-emerald-50" />
-        <StatCard label="Materials" value="4" icon={FileText} color="text-blue-600" bg="bg-blue-50" />
-        <StatCard label="Reviews" value="12" icon={Repeat} color="text-amber-600" bg="bg-amber-50" />
-        <StatCard label="Time Left" value="3.5h" icon={Timer} color="text-violet-600" bg="bg-violet-50" />
+        <StatCard label="Materials" value={`${stats.materials}`} icon={FileText} color="text-blue-600" bg="bg-blue-50" />
+        <StatCard label="Reviews" value={`${stats.reviews}`} icon={Repeat} color="text-amber-600" bg="bg-amber-50" />
+        <StatCard label="Time Left" value={`${Math.max(1, Math.round(stats.minutesLeft / 60))}h`} icon={Timer} color="text-violet-600" bg="bg-violet-50" />
       </div>
 
       {/* Learning Path */}

@@ -1,7 +1,12 @@
 "use client";
 
 import { AppShell } from "./app-shell";
+import { Providers } from "./providers";
 
 export default function ClientWrapper({ children }: { children: React.ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <Providers>
+      <AppShell>{children}</AppShell>
+    </Providers>
+  );
 }

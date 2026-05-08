@@ -3,57 +3,24 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { NotebookLayout } from "../notebook-layout";
+import { useLearnLM } from "@/lib/learnlm-data";
 import {
-  BookOpen, Sparkles, ChevronRight, Target,
-  Clock, Brain, GraduationCap, Repeat,
-  Lightbulb, ClipboardList, ArrowRight,
+  ChevronRight, Target, Clock, ArrowRight,
 } from "lucide-react";
 
-const mockNotebook = { title: "Biology 101", color: "#10b981", icon: "🧬" };
-
-const mockUnits = [
-  {
-    _id: "u1", title: "Cell Structure",
-    overview: "Explore the fundamental building blocks of life. This unit covers the organization, structure, and function of cellular components.",
-    objectives: ["Identify major cell organelles and their functions", "Compare prokaryotic and eukaryotic cells", "Describe the fluid mosaic model"],
-    prerequisites: ["Basic chemistry knowledge"],
-    estimatedMinutes: 45, difficulty: "beginner" as const,
-    mastery: 92, status: "mastered" as const,
-    subunitCount: 4, flashcardCount: 12, quizCount: 15,
-  },
-  {
-    _id: "u2", title: "Cellular Respiration",
-    overview: "Understand how cells extract energy from nutrients. Covers the complete pathway from glycolysis to oxidative phosphorylation.",
-    objectives: ["Explain the steps of glycolysis", "Describe the Krebs cycle", "Map the electron transport chain"],
-    prerequisites: ["Cell Structure (Unit 1)"],
-    estimatedMinutes: 60, difficulty: "intermediate" as const,
-    mastery: 62, status: "practicing" as const,
-    subunitCount: 4, flashcardCount: 18, quizCount: 20,
-  },
-  {
-    _id: "u3", title: "DNA & Protein Synthesis",
-    overview: "From genetic code to functional proteins. Understand transcription, translation, and gene regulation.",
-    objectives: ["Describe DNA replication", "Explain transcription and translation", "Understand gene regulation"],
-    prerequisites: ["Cell Structure (Unit 1)"],
-    estimatedMinutes: 55, difficulty: "intermediate" as const,
-    mastery: 38, status: "learning" as const,
-    subunitCount: 3, flashcardCount: 15, quizCount: 18,
-  },
-  {
-    _id: "u4", title: "Genetics & Inheritance",
-    overview: "How traits are passed from generation to generation. Mendelian genetics, beyond Mendel, and population genetics.",
-    objectives: ["Solve Punnett square problems", "Explain non-Mendelian inheritance", "Apply Hardy-Weinberg principle"],
-    prerequisites: ["DNA & Protein Synthesis (Unit 3)"],
-    estimatedMinutes: 70, difficulty: "advanced" as const,
-    mastery: 0, status: "not_started" as const,
-    subunitCount: 5, flashcardCount: 20, quizCount: 25,
-  },
-];
 
 export default function NotebookUnitsPage() {
   const params = useParams();
   const notebookId = params.id as string;
-  const notebook = mockNotebook;
+  const { getNotebook, getUnits, getSubunits, getFlashcards, getQuestions } = useLearnLM();
+  const notebook = getNotebook(notebookId);
+  const units = getUnits(notebookId).map((unit) => ({
+    ...unit,
+    subunitCount: getSubunits(unit._id).length,
+    flashcardCount: getFlashcards(unit._id).length,
+    quizCount: getQuestions(unit._id).length,
+  }));
+  if (!notebook) return null;
 
   return (
     <NotebookLayout notebookId={notebookId} notebookTitle={notebook.title} notebookColor={notebook.color}>
@@ -64,7 +31,7 @@ export default function NotebookUnitsPage() {
 
       {/* Learning Path Visual */}
       <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2">
-        {mockUnits.map((unit, idx) => (
+        {units.map((unit, idx) => (
           <div key={unit._id} className="flex items-center">
             <Link
               href={`/notebook/${notebookId}/units/${unit._id}`}
@@ -78,7 +45,7 @@ export default function NotebookUnitsPage() {
               <span className="text-xs">{idx + 1}.</span>
               {unit.title}
             </Link>
-            {idx < mockUnits.length - 1 && (
+            {idx < units.length - 1 && (
               <ChevronRight className="w-4 h-4 text-slate-300 mx-1" />
             )}
           </div>
@@ -87,7 +54,7 @@ export default function NotebookUnitsPage() {
 
       {/* Unit Cards */}
       <div className="space-y-4">
-        {mockUnits.map((unit) => (
+        {units.map((unit) => (
           <div
             key={unit._id}
             className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow"

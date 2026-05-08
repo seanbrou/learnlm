@@ -3,25 +3,32 @@ import { v } from "convex/values";
 
 export default defineSchema({
   notebooks: defineTable({
+    ownerId: v.optional(v.string()),
     title: v.string(),
     description: v.string(),
     subject: v.string(),
     color: v.string(),
     icon: v.string(),
     createdAt: v.number(),
-  }),
+    lastStudiedAt: v.optional(v.number()),
+    studyStreak: v.optional(v.number()),
+  }).index("by_owner", ["ownerId"]),
 
   materials: defineTable({
+    ownerId: v.optional(v.string()),
     notebookId: v.id("notebooks"),
     name: v.string(),
     content: v.string(),
     fileType: v.string(),
     wordCount: v.number(),
+    pages: v.optional(v.number()),
+    size: v.optional(v.string()),
     processed: v.boolean(),
     createdAt: v.number(),
-  }).index("by_notebook", ["notebookId"]),
+  }).index("by_owner", ["ownerId"]).index("by_notebook", ["notebookId"]),
 
   units: defineTable({
+    ownerId: v.optional(v.string()),
     notebookId: v.id("notebooks"),
     title: v.string(),
     overview: v.string(),
@@ -30,44 +37,54 @@ export default defineSchema({
     estimatedMinutes: v.number(),
     difficulty: v.union(v.literal("beginner"), v.literal("intermediate"), v.literal("advanced")),
     order: v.number(),
-  }).index("by_notebook", ["notebookId"]),
+    mastery: v.optional(v.number()),
+    status: v.optional(v.union(v.literal("not_started"), v.literal("learning"), v.literal("practicing"), v.literal("mastered"))),
+  }).index("by_owner", ["ownerId"]).index("by_notebook", ["notebookId"]),
 
   subunits: defineTable({
+    ownerId: v.optional(v.string()),
     unitId: v.id("units"),
     title: v.string(),
+    desc: v.optional(v.string()),
     content: v.string(),
+    mastery: v.optional(v.number()),
     keyTerms: v.array(v.object({ term: v.string(), definition: v.string() })),
     examples: v.array(v.string()),
     misconceptions: v.array(v.object({ myth: v.string(), reality: v.string() })),
     sourceRefs: v.array(v.string()),
     order: v.number(),
-  }).index("by_unit", ["unitId"]),
+  }).index("by_owner", ["ownerId"]).index("by_unit", ["unitId"]),
 
   flashcards: defineTable({
+    ownerId: v.optional(v.string()),
     subunitId: v.id("subunits"),
     unitId: v.id("units"),
     front: v.string(),
     back: v.string(),
     difficulty: v.union(v.literal("easy"), v.literal("medium"), v.literal("hard")),
-    interval: v.number(), // spaced repetition interval in days
-    easeFactor: v.number(), // SM-2 ease factor
-    nextReview: v.number(), // timestamp of next review
+    source: v.optional(v.string()),
+    interval: v.number(),
+    easeFactor: v.number(),
+    nextReview: v.number(),
     repetitions: v.number(),
-  }).index("by_subunit", ["subunitId"]).index("by_unit", ["unitId"]).index("by_review", ["nextReview"]),
+    mastery: v.optional(v.number()),
+  }).index("by_owner", ["ownerId"]).index("by_subunit", ["subunitId"]).index("by_unit", ["unitId"]).index("by_review", ["nextReview"]),
 
   quizQuestions: defineTable({
+    ownerId: v.optional(v.string()),
     subunitId: v.id("subunits"),
     unitId: v.id("units"),
     question: v.string(),
     options: v.array(v.string()),
     correctIndex: v.number(),
     explanation: v.string(),
-    difficulty: v.union(v.literal("easy"), v.literal("medium"), v.literal("hard")),
+    difficulty: v.union(v.literal("easy"), v.literal("medium"), v.literal("hard"), v.literal("exam")),
     type: v.union(v.literal("recall"), v.literal("application"), v.literal("analysis"), v.literal("exam")),
     sourceRefs: v.array(v.string()),
-  }).index("by_subunit", ["subunitId"]).index("by_unit", ["unitId"]),
+  }).index("by_owner", ["ownerId"]).index("by_subunit", ["subunitId"]).index("by_unit", ["unitId"]),
 
   progress: defineTable({
+    ownerId: v.optional(v.string()),
     notebookId: v.id("notebooks"),
     subunitId: v.id("subunits"),
     mastery: v.number(),
@@ -77,13 +94,43 @@ export default defineSchema({
     incorrectAnswers: v.number(),
     streak: v.number(),
     status: v.union(v.literal("not_started"), v.literal("learning"), v.literal("practicing"), v.literal("mastered")),
-  }).index("by_notebook", ["notebookId"]).index("by_subunit", ["subunitId"]),
+  }).index("by_owner", ["ownerId"]).index("by_notebook", ["notebookId"]).index("by_subunit", ["subunitId"]),
+
+  quizAttempts: defineTable({
+    ownerId: v.optional(v.string()),
+    notebookId: v.id("notebooks"),
+    unitId: v.id("units"),
+    questionId: v.optional(v.id("quizQuestions")),
+    question: v.string(),
+    selectedIndex: v.number(),
+    correctIndex: v.number(),
+    isCorrect: v.boolean(),
+    createdAt: v.number(),
+  }).index("by_owner", ["ownerId"]).index("by_notebook", ["notebookId"]).index("by_unit", ["unitId"]),
 
   chatMessages: defineTable({
+    ownerId: v.optional(v.string()),
     notebookId: v.optional(v.id("notebooks")),
     role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
     content: v.string(),
     citations: v.optional(v.array(v.string())),
     timestamp: v.number(),
-  }).index("by_notebook", ["notebookId"]).index("by_timestamp", ["timestamp"]),
+  }).index("by_owner", ["ownerId"]).index("by_notebook", ["notebookId"]).index("by_timestamp", ["timestamp"]),
+
+  studyEvents: defineTable({
+    ownerId: v.optional(v.string()),
+    notebookId: v.id("notebooks"),
+    minutes: v.number(),
+    kind: v.union(v.literal("study"), v.literal("practice"), v.literal("correct"), v.literal("review")),
+    timestamp: v.number(),
+  }).index("by_owner", ["ownerId"]).index("by_notebook", ["notebookId"]).index("by_timestamp", ["timestamp"]),
+
+  settings: defineTable({
+    ownerId: v.string(),
+    userName: v.string(),
+    dailyGoalMinutes: v.number(),
+    notifications: v.boolean(),
+    theme: v.union(v.literal("light"), v.literal("dark"), v.literal("system")),
+    updatedAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
 });

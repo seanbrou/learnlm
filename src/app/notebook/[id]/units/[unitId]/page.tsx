@@ -3,38 +3,14 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { NotebookLayout } from "../../notebook-layout";
+import { useLearnLM } from "@/lib/learnlm-data";
 import {
-  BookOpen, ChevronRight, Target,
+  BookOpen, ChevronRight,
   Clock, Brain, GraduationCap, Repeat,
-  Lightbulb, ClipboardList, Award, PlayCircle,
+  Lightbulb, ClipboardList, Award,
   Zap, AlertTriangle, FileText,
-  Check,
 } from "lucide-react";
 
-const mockNotebook = { title: "Biology 101", color: "#10b981", icon: "🧬" };
-
-const mockUnit = {
-  _id: "u2",
-  number: 2,
-  title: "Cellular Respiration",
-  overview: "Understand how cells extract energy from nutrients through a series of interconnected metabolic pathways.",
-  objectives: [
-    "Explain the three stages of cellular respiration",
-    "Calculate net ATP yield from glucose",
-    "Describe the role of electron carriers",
-    "Compare aerobic and anaerobic respiration",
-  ],
-  prerequisites: ["Cell Structure (Unit 1)", "Basic chemistry knowledge"],
-  estimatedMinutes: 60,
-  difficulty: "intermediate" as "beginner" | "intermediate" | "advanced",
-  mastery: 62,
-  subunits: [
-    { _id: "s1", title: "Glycolysis", mastery: 78, desc: "Breakdown of glucose into pyruvate in the cytoplasm" },
-    { _id: "s2", title: "Krebs Cycle", mastery: 45, desc: "Citric acid cycle in the mitochondrial matrix" },
-    { _id: "s3", title: "Electron Transport Chain", mastery: 28, desc: "Proton gradient creation on the inner membrane" },
-    { _id: "s4", title: "ATP Synthase & Chemiosmosis", mastery: 55, desc: "ATP production driven by the proton gradient" },
-  ],
-};
 
 const activityGroups = [
   {
@@ -70,8 +46,12 @@ export default function UnitDetailPage() {
   const params = useParams();
   const notebookId = params.id as string;
   const unitId = params.unitId as string;
-  const notebook = mockNotebook;
-  const unit = mockUnit;
+  const { getNotebook, getUnit, getSubunits } = useLearnLM();
+  const notebook = getNotebook(notebookId);
+  const baseUnit = getUnit(unitId);
+  const subunits = getSubunits(unitId).map((s) => ({ ...s, desc: s.desc || s.content.slice(0, 90) }));
+  const unit = baseUnit ? { ...baseUnit, number: baseUnit.order, subunits } : undefined;
+  if (!notebook || !unit) return null;
 
   const currentSubunit = unit.subunits.reduce((a, b) => a.mastery > 0 && a.mastery < 80 && (b.mastery === 0 || b.mastery < a.mastery) ? b : a, unit.subunits[0]);
   const avgSubunitMastery = Math.round(unit.subunits.reduce((a, b) => a + b.mastery, 0) / unit.subunits.length);

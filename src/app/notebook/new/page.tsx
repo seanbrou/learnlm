@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useLearnLM } from "@/lib/learnlm-data";
 import { ArrowLeft, Plus } from "lucide-react";
 
 const colors = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#f43f5e", "#84cc16"];
@@ -10,8 +11,10 @@ const icons = ["📚", "🧬", "🧮", "💻", "📊", "🎨", "🔬", "🌍", "
 
 export default function NewNotebookPage() {
   const router = useRouter();
+  const { createNotebook } = useLearnLM();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [subject, setSubject] = useState("");
   const [color, setColor] = useState(colors[0]);
   const [icon, setIcon] = useState(icons[0]);
 
@@ -47,6 +50,11 @@ export default function NewNotebookPage() {
             </div>
 
             <div>
+              <label className="text-sm font-medium text-slate-700 mb-1.5 block">Subject</label>
+              <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g., Biology" className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" />
+            </div>
+
+            <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">Icon</label>
               <div className="flex flex-wrap gap-2">
                 {icons.map((ic) => (
@@ -66,7 +74,11 @@ export default function NewNotebookPage() {
               </div>
             </div>
 
-            <button onClick={() => router.push("/")} className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+            <button onClick={() => {
+              if (!title.trim()) return;
+              const notebookId = createNotebook({ title: title.trim(), description: description.trim() || "Personal learning notebook", subject: subject.trim() || "General", color, icon });
+              router.push(`/notebook/${notebookId}`);
+            }} className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
               <Plus className="w-5 h-5" />
               Create Notebook
             </button>
