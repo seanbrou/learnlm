@@ -13,8 +13,8 @@ export default function ExamPage() {
   const unitId = params.unitId as string;
   const { getNotebook, getQuestions, answerQuestion } = useLearnLM();
   const notebook = getNotebook(notebookId);
-  const generated = getQuestions(unitId, "exam");
-  const examQuestions = generated.length ? generated : getQuestions(unitId).slice(0, 5).map((q) => ({ ...q, difficulty: "exam" as const, type: "exam" as const }));
+  const generated = getQuestions(unitId, "exam", notebookId);
+  const examQuestions = generated.length ? generated : getQuestions(unitId, undefined, notebookId).slice(0, 5).map((q) => ({ ...q, difficulty: "exam" as const, type: "exam" as const }));
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);

@@ -12,8 +12,8 @@ export default function LessonPage() {
   const unitId = params.unitId as string;
   const { getNotebook, getUnit, getSubunits } = useLearnLM();
   const notebook = getNotebook(notebookId);
-  const unit = getUnit(unitId);
-  const subunits = getSubunits(unitId);
+  const unit = getUnit(unitId, notebookId);
+  const subunits = getSubunits(unitId, notebookId);
   const lessonSections = [
     { title: `Overview: ${unit?.title || "Lesson"}`, content: unit?.overview || "Generated lesson overview.", sourceRefs: ["AI unit overview"] },
     ...subunits.map((s) => ({ title: s.title, content: s.content, keyTerms: s.keyTerms, sourceRefs: s.sourceRefs })),

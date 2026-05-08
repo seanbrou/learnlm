@@ -13,7 +13,7 @@ export default function QuizPage() {
   const unitId = params.unitId as string;
   const { getNotebook, getQuestions, answerQuestion } = useLearnLM();
   const notebook = getNotebook(notebookId);
-  const questions = getQuestions(unitId).filter((q) => q.type !== "exam").slice(0, 10);
+  const questions = getQuestions(unitId, undefined, notebookId).filter((q) => q.type !== "exam").slice(0, 10);
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);

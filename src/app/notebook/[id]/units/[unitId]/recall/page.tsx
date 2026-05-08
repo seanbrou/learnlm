@@ -12,7 +12,7 @@ export default function RecallPage() {
   const unitId = params.unitId as string;
   const { getNotebook, getSubunits, setState } = useLearnLM();
   const notebook = getNotebook(notebookId);
-  const recallQuestions = getSubunits(unitId).flatMap((s) => [
+  const recallQuestions = getSubunits(unitId, notebookId).flatMap((s) => [
     { id: s._id, prompt: `Explain ${s.title} from memory, including its key idea and one example.`, answer: `${s.content}\n\nExample: ${s.examples[0] || "Create your own concrete application."}`, source: s.sourceRefs[0] || "Notebook material" },
     ...(s.keyTerms[0] ? [{ id: `${s._id}-term`, prompt: `Define ${s.keyTerms[0].term} without looking.`, answer: s.keyTerms[0].definition, source: s.sourceRefs[0] || "Key terms" }] : []),
   ]).slice(0, 8);

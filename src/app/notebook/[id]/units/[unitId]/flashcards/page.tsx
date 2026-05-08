@@ -12,7 +12,7 @@ export default function FlashcardsPage() {
   const unitId = params.unitId as string;
   const { getNotebook, getFlashcards, reviewFlashcard } = useLearnLM();
   const notebook = getNotebook(notebookId);
-  const flashcards = getFlashcards(unitId);
+  const flashcards = getFlashcards(unitId, notebookId);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);

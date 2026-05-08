@@ -48,8 +48,8 @@ export default function UnitDetailPage() {
   const unitId = params.unitId as string;
   const { getNotebook, getUnit, getSubunits } = useLearnLM();
   const notebook = getNotebook(notebookId);
-  const baseUnit = getUnit(unitId);
-  const subunits = getSubunits(unitId).map((s) => ({ ...s, desc: s.desc || s.content.slice(0, 90) }));
+  const baseUnit = getUnit(unitId, notebookId);
+  const subunits = getSubunits(unitId, notebookId).map((s) => ({ ...s, desc: s.desc || s.content.slice(0, 90) }));
   const unit = baseUnit ? { ...baseUnit, number: baseUnit.order, subunits } : undefined;
   if (!notebook || !unit) return null;
 

@@ -12,8 +12,8 @@ export default function MasteryPage() {
   const notebookId = params.id as string;
   const unitId = params.unitId as string;
   const { getNotebook, getUnit, getSubunits, setState } = useLearnLM();
-  const notebook = getNotebook(notebookId); const unit = getUnit(unitId);
-  const masteryQuestions = getSubunits(unitId).flatMap((s) => [
+  const notebook = getNotebook(notebookId); const unit = getUnit(unitId, notebookId);
+  const masteryQuestions = getSubunits(unitId, notebookId).flatMap((s) => [
     { id: s._id, question: `Explain how ${s.title} works and why it matters.`, answer: s.content },
     ...(s.misconceptions[0] ? [{ id: `${s._id}-mis`, question: `Correct this misconception: ${s.misconceptions[0].myth}`, answer: s.misconceptions[0].reality }] : []),
   ]).slice(0, 6);
